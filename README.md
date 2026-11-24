@@ -28,7 +28,9 @@ Our project investigates whether modifying YOLOv8's classification loss can impr
 
 Our baseline model is YOLOv8, a one-stage object detection architecture that predicts object bounding boxes, class labels, and confidence scores. We use pretrained YOLOv8 weights and fine-tune the model on the DAWN dataset.
 
-**Framework**: Ultralytics YOLOv8
+**Framework**: [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics)
+
+**Documentation**: [YOLOv8 Documentation](https://docs.ultralytics.com/models/yolov8/)
 
 ## Dataset
 
@@ -83,7 +85,7 @@ dawn-vehicle-detection/
 │
 ├── README.md
 ├── notebooks/
-│   ├── final_dawn_yolov8.ipynb
+│   ├── yolov8_baseline_and_weighted_loss.ipynb
 │
 ├── src/
 │   ├── preprocessing.py
@@ -97,7 +99,6 @@ dawn-vehicle-detection/
 ├── configs/
 │   └── data.yaml
 │
-├── models/
 ├── results/
 │   ├── metrics/
 │   ├── plots/
@@ -107,4 +108,3 @@ dawn-vehicle-detection/
 └── .gitignore
 ```
 
-## References
