@@ -1,6 +1,6 @@
 # Vehicle Detection in Adverse Weather
 
-**CSC490H5 - University of Toronto Mississauga**
+**CSC490 (Machine Learning for Vision) - University of Toronto**
 
 ## Overview
 
