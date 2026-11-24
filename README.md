@@ -1,4 +1,4 @@
-# Vehicle Detection in Adverse Weather
+# Class-Weighted Classification Loss for Object Detection Under Adverse Weather Conditions
 
 **CSC490 (Machine Learning for Vision) - University of Toronto**
 
