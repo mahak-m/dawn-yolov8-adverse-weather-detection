@@ -81,7 +81,7 @@ We pay particular attention to performance changes in underrepresented categorie
 The repository will contain the implementation of the baseline model, our proposed modifications, experiment configurations, and documentation.
 
 ```text
-dawn-vehicle-detection/
+dawn-yolov8-adverse-weather-detection/
 │
 ├── README.md
 ├── notebooks/
