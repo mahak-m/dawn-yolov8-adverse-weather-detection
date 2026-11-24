@@ -1,8 +1,14 @@
-# Robust Multimodal Vehicle Detection in Foggy Weather
+# Vehicle Detection in Adverse Weather
 
-**CSC490H5 — StormSight**
+**CSC490H5 - University of Toronto Mississauga**
 
-This project investigates robust vehicle detection under adverse weather conditions, with a focus on foggy environments. We build upon **MVDNet (Multimodal Vehicle Detection Network)**, which combines LiDAR and radar information to improve vehicle detection when visibility is degraded.
+## Overview
+
+This project investigates vehicle detection under adverse weather conditions using YOLOv8 and the DAWN (Detection in Adverse Weather Nature) dataset.
+
+Our work focuses on addressing class imbalance in adverse-weather vehicle detection. Since some object categories appear significantly more frequently than others, a model may perform better on common classes while struggling to detect underrepresented categories.
+
+To address this challenge, we investigate a class-weighted classification loss for YOLOv8, assigning greater importance to underrepresented classes during training.
 
 ## Team
 
@@ -12,84 +18,93 @@ This project investigates robust vehicle detection under adverse weather conditi
 
 ## Problem
 
-Vehicle detection becomes more challenging in adverse weather conditions such as fog because environmental conditions can reduce the quality and reliability of sensor observations.
+Object detection becomes more challenging under adverse weather conditions such as fog, rain, snow, and sandstorms. Reduced visibility, poor image quality, and occlusion can make objects harder to detect.
 
-Our project focuses on multimodal vehicle detection using **LiDAR and radar**. We are interested in whether sensor fusion can improve robustness when one of the sensors contains noisy data or becomes partially unavailable.
+In addition to these challenges, the DAWN dataset contains an imbalanced distribution of object categories. Common classes, particularly cars, account for a large proportion of the annotations, while categories such as bicycles and motorcycles are underrepresented.
+
+Our project investigates whether modifying YOLOv8's classification loss can improve detection performance on these less frequent classes.
 
 ## Baseline
 
-Our primary baseline is:
+Our baseline model is YOLOv8, a one-stage object detection architecture that predicts object bounding boxes, class labels, and confidence scores. We use pretrained YOLOv8 weights and fine-tune the model on the DAWN dataset.
 
-**Robust Multimodal Vehicle Detection in Foggy Weather Using Complementary LiDAR and Radar Signals (MVDNet)**
-
-**Paper:**
-https://openaccess.thecvf.com/content/CVPR2021/papers/Qian_Robust_Multimodal_Vehicle_Detection_in_Foggy_Weather_Using_Complementary_Lidar_CVPR_2021_paper.pdf
-
-**Original implementation:**
-https://github.com/qiank10/MVDNet
+**Framework**: Ultralytics YOLOv8
 
 ## Dataset
 
-We plan to use the **Oxford Radar RobotCar Dataset**, which contains synchronized radar and other sensor data collected from a vehicle operating in different weather and traffic conditions.
+We use the DAWN (Detection in Adverse Weather Nature) dataset, which contains real-world road images captured under different adverse weather conditions.
 
-**Dataset website:**
-https://oxford-robotics-institute.github.io/radar-robotcar-dataset/
+The dataset includes four weather conditions: fog, rain, snow, and sand.
 
-## Proposed Improvements
+It contains annotated object categories such as cars, trucks, buses, bicycles, motorcycles, and people.
 
-We will investigate the robustness of multimodal vehicle detection by introducing controlled sensor degradation.
+**Dataset:** [DAWN — Detection in Adverse Weather Nature](https://www.kaggle.com/code/aaditya2002/dawn-dataset-yolov8)
 
-Our experiments will focus on:
+## Proposed Improvement: Class-Weighted Classification Loss
 
-### 1. Missing or Noisy Sensor Data
+Our main extension modifies YOLOv8's classification loss to account for the imbalance in object category frequencies.
 
-* Simulate situations where one sensor is unavailable or its measurements are corrupted.
-* Evaluate how detection performance changes under different levels of degradation.
+### 1. Class Distribution Analysis
+- Analyze the frequency of each object category in the training dataset.
+- Identify underrepresented classes.
+- Calculate class weights based on category frequencies.
 
-### 2. Different Fusion Strategies
+### 2. Modified Classification Loss
+- Incorporate class weights into YOLOv8's classification loss.
+- Assign greater weights to underrepresented classes and lower weights to more frequent classes.
+- Investigate whether this encourages the model to learn better representations of less frequent categories.
 
-* Compare different ways of combining LiDAR and radar information.
-* Determine whether alternative fusion strategies improve robustness.
+### 3. Model Training
 
-### 3. Modified Loss/Cost Functions
-
-* Investigate whether changing the training objective can improve detection performance when sensor inputs are unreliable.
+We compare the original YOLOv8 baseline against the modified class-weighted model using consistent dataset splits and comparable training configurations.
 
 ## Evaluation
 
-We will primarily use **Average Precision (AP)** and, where applicable, **mean Average Precision (mAP)** to evaluate vehicle detection performance.
+We evaluate model performance using standard object detection metrics:
 
-We will compare:
+- **Precision**: Proportion of predicted detections that are correct.
+- **Recall**: Proportion of ground-truth objects successfully detected.
+- **mAP@50**: Mean Average Precision at an IoU threshold of 0.50.
+- **mAP@50–95**: Mean Average Precision across IoU thresholds from 0.50 to 0.95.
+- **Per-class AP**: Detection performance for individual object categories.
 
-* LiDAR-only detection
-* Radar-only detection
-* Multimodal LiDAR + radar detection
-* Multimodal detection with noisy sensor inputs
-* Multimodal detection with missing sensor inputs
+Our comparisons focus on:
+- Original YOLOv8 baseline
+- YOLOv8 with class-weighted classification loss
 
-The change in AP across these conditions will be used to measure the robustness of the system.
+We pay particular attention to performance changes in underrepresented categories to determine whether class weighting improves detection without significantly compromising performance on common classes.
 
 ## Repository Structure
 
 The repository will contain the implementation of the baseline model, our proposed modifications, experiment configurations, and documentation.
 
 ```text
-robust-multimodal-vehicle-detection/
+dawn-vehicle-detection/
 │
 ├── README.md
-├── data/
-├── models/
+├── notebooks/
+│   ├── final_dawn_yolov8.ipynb
+│
+├── src/
+│   ├── preprocessing.py
+│   ├── loss.py
+│   ├── train.py
+│   └── evaluate.py
+│
+├── app/
+│   └── app.py
+│
 ├── configs/
-├── scripts/
-├── experiments/
-└── results/
+│   └── data.yaml
+│
+├── models/
+├── results/
+│   ├── metrics/
+│   ├── plots/
+│   └── predictions/
+│
+├── requirements.txt
+└── .gitignore
 ```
 
-The exact structure may change as development progresses.
-
 ## References
-
-Qian, K., Zhu, S., Zhang, X., & Li, L. E. (2021). *Robust Multimodal Vehicle Detection in Foggy Weather Using Complementary LiDAR and Radar Signals*. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR).
-
-Oxford Radar RobotCar Dataset:
-https://oxford-robotics-institute.github.io/radar-robotcar-dataset/
