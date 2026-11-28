@@ -87,11 +87,7 @@ dawn-yolov8-adverse-weather-detection/
 ├── notebooks/
 │   ├── yolov8_baseline_and_weighted_loss.ipynb
 │
-├── src/
-│   ├── preprocessing.py
-│   ├── loss.py
-│   ├── train.py
-│   └── evaluate.py
+├── evaluate.py
 │
 ├── app/
 │   └── app.py
@@ -99,12 +95,6 @@ dawn-yolov8-adverse-weather-detection/
 ├── configs/
 │   └── data.yaml
 │
-├── results/
-│   ├── metrics/
-│   ├── plots/
-│   └── predictions/
-│
-├── requirements.txt
-└── .gitignore
+└── requirements.txt
 ```
 
