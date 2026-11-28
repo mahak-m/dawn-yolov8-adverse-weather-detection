@@ -1,3 +1,4 @@
+
 import os
 import io
 
@@ -20,9 +21,13 @@ st.set_page_config(
 )
 
 st.title("🚗 Vehicle Detection in Adverse Weather")
+
 st.markdown(
-    "Compare the original YOLOv8 model with our "
-    "class-weighted YOLOv8 model on adverse-weather images."
+    """
+    Compare three YOLOv8 configurations trained on the DAWN
+    adverse-weather dataset. Upload an image to evaluate their
+    object detection predictions under identical settings.
+    """
 )
 
 st.divider()
@@ -32,15 +37,22 @@ st.divider()
 # 2. MODEL PATHS
 # --------------------------------------------------
 
-BASELINE_PATH = os.getenv(
-    "BASELINE_MODEL",
-    "/content/drive/MyDrive/dawn_models/baseline/best.pt"
-)
+MODELS = {
+    "Baseline YOLOv8": os.getenv(
+        "BASELINE_MODEL",
+        "/content/drive/MyDrive/csc490_runs/baseline_s108/weights/best.pt"
+    ),
 
-WEIGHTED_PATH = os.getenv(
-    "WEIGHTED_MODEL",
-    "/content/drive/MyDrive/dawn_models/weighted/best.pt"
-)
+    "Inverse Square-Root Weighted YOLOv8": os.getenv(
+        "SQRT_MODEL",
+        "/content/drive/MyDrive/csc490_runs/weighted_sqrt_s108/weights/best.pt"
+    ),
+
+    "Inverse-Frequency Weighted YOLOv8": os.getenv(
+        "INVERSE_MODEL",
+        "/content/drive/MyDrive/csc490_runs/weighted_inverse_s108/weights/best.pt"
+    )
+}
 
 
 # --------------------------------------------------
@@ -69,6 +81,7 @@ def run_detection(model, image, confidence, iou):
 
     # Convert annotated image from BGR to RGB
     annotated_image = result.plot()
+
     annotated_image = cv2.cvtColor(
         annotated_image,
         cv2.COLOR_BGR2RGB
@@ -96,7 +109,13 @@ def run_detection(model, image, confidence, iou):
                 "Y2": round(y2, 1)
             })
 
-    detection_df = pd.DataFrame(detections)
+    detection_df = pd.DataFrame(
+        detections,
+        columns=[
+            "Class", "Confidence",
+            "X1", "Y1", "X2", "Y2"
+        ]
+    )
 
     return annotated_image, detection_df
 
@@ -123,13 +142,14 @@ iou = st.sidebar.slider(
     step=0.05
 )
 
+model_options = [
+    "Compare All Models",
+    *MODELS.keys()
+]
+
 model_choice = st.sidebar.selectbox(
     "Select Model",
-    [
-        "Compare Both Models",
-        "Baseline YOLOv8",
-        "Class-Weighted YOLOv8"
-    ]
+    model_options
 )
 
 
@@ -151,6 +171,7 @@ if uploaded_file is not None:
     ).convert("RGB")
 
     st.subheader("Original Image")
+
     st.image(
         image,
         caption="Uploaded Image",
@@ -165,29 +186,20 @@ if uploaded_file is not None:
 
     if st.button("Run Vehicle Detection", type="primary"):
 
-        models_to_run = []
-
-        if model_choice in [
-            "Compare Both Models",
-            "Baseline YOLOv8"
-        ]:
-            models_to_run.append(
-                ("Baseline YOLOv8", BASELINE_PATH)
-            )
-
-        if model_choice in [
-            "Compare Both Models",
-            "Class-Weighted YOLOv8"
-        ]:
-            models_to_run.append(
-                ("Class-Weighted YOLOv8", WEIGHTED_PATH)
-            )
+        if model_choice == "Compare All Models":
+            models_to_run = list(MODELS.items())
+        else:
+            models_to_run = [
+                (model_choice, MODELS[model_choice])
+            ]
 
         try:
 
             model_results = {}
 
-            with st.spinner("Loading models and running detection..."):
+            with st.spinner(
+                "Loading models and running detection..."
+            ):
 
                 for model_name, model_path in models_to_run:
 
@@ -249,29 +261,35 @@ if uploaded_file is not None:
 
             for model_name, output in model_results.items():
 
-                st.subheader(model_name)
+                with st.expander(
+                    f"{model_name} — Detection Details",
+                    expanded=True
+                ):
 
-                detections = output["detections"]
+                    detections = output["detections"]
 
-                if detections.empty:
+                    if detections.empty:
 
-                    st.info("No objects detected in this image.")
+                        st.info(
+                            "No objects detected in this image."
+                        )
 
-                else:
+                    else:
 
-                    st.dataframe(
-                        detections,
-                        use_container_width=True,
-                        hide_index=True
-                    )
+                        st.dataframe(
+                            detections,
+                            use_container_width=True,
+                            hide_index=True
+                        )
 
             # --------------------------------------------------
             # 10. MODEL COMPARISON
             # --------------------------------------------------
 
-            if len(model_results) == 2:
+            if len(model_results) > 1:
 
                 st.divider()
+
                 st.header("Model Comparison")
 
                 comparison_data = []
@@ -281,7 +299,9 @@ if uploaded_file is not None:
                     detections = output["detections"]
 
                     class_counts = (
-                        detections["Class"].value_counts().to_dict()
+                        detections["Class"]
+                        .value_counts()
+                        .to_dict()
                         if not detections.empty
                         else {}
                     )
@@ -303,7 +323,9 @@ if uploaded_file is not None:
                         ) if class_counts else "None"
                     })
 
-                comparison_df = pd.DataFrame(comparison_data)
+                comparison_df = pd.DataFrame(
+                    comparison_data
+                )
 
                 st.dataframe(
                     comparison_df,
@@ -311,10 +333,58 @@ if uploaded_file is not None:
                     hide_index=True
                 )
 
+                # Detection counts by class
+                st.subheader("Detections by Class")
+
+                class_comparison = []
+
+                for model_name, output in model_results.items():
+
+                    detections = output["detections"]
+
+                    counts = (
+                        detections["Class"].value_counts()
+                        if not detections.empty
+                        else pd.Series(dtype=int)
+                    )
+
+                    for class_name, count in counts.items():
+
+                        class_comparison.append({
+                            "Model": model_name,
+                            "Class": class_name,
+                            "Detections": count
+                        })
+
+                if class_comparison:
+
+                    class_df = pd.DataFrame(
+                        class_comparison
+                    )
+
+                    pivot_df = class_df.pivot_table(
+                        index="Class",
+                        columns="Model",
+                        values="Detections",
+                        fill_value=0
+                    )
+
+                    st.dataframe(
+                        pivot_df,
+                        use_container_width=True
+                    )
+
+                else:
+
+                    st.info("No objects were detected by any model.")
+
                 st.caption(
-                    "These results compare predictions on one uploaded image. "
-                    "They are not substitutes for validation metrics such as "
-                    "mAP, precision, or recall."
+                    """
+                    Note: These statistics compare predictions on one
+                    uploaded image. Detection counts and confidence
+                    scores are not substitutes for validation metrics
+                    such as precision, recall, mAP@50, or mAP@50-95.
+                    """
                 )
 
         except Exception as error:
@@ -336,25 +406,29 @@ st.divider()
 
 with st.expander("About This Project"):
 
-    st.markdown("""
-    This project investigates vehicle detection under adverse
-    weather conditions using the DAWN dataset and YOLOv8.
+    st.markdown(
+        """
+        This project investigates vehicle and object detection
+        under adverse weather conditions using the DAWN dataset
+        and YOLOv8.
 
-    **Models compared:**
+        **Models Compared:**
 
-    - Baseline YOLOv8
-    - YOLOv8 with class-weighted classification loss
+        - Baseline YOLOv8
+        - Inverse Square-Root Weighted YOLOv8
+        - Inverse-Frequency Weighted YOLOv8
 
-    **Project objective:**
+        **Research Objective:**
 
-    Investigate whether class weighting improves detection
-    performance on underrepresented object categories.
+        Investigate whether class-weighted classification loss
+        improves detection performance on underrepresented classes.
 
-    **Evaluation metrics:**
+        **Evaluation Metrics:**
 
-    - Precision
-    - Recall
-    - mAP@50
-    - mAP@50-95
-    - Per-class Average Precision
-    """)
+        - Precision
+        - Recall
+        - mAP@50
+        - mAP@50-95
+        - Per-class Average Precision
+        """
+    )
